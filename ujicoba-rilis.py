@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import os
 import base64
+import requests
 
 # --- SETUP HALAMAN UTAMA ---
 st.set_page_config(page_title="Uji Kompetensi SD", page_icon="🎓", layout="centered")
@@ -243,14 +244,40 @@ def halaman_hasil():
     if 'sudah_disimpan' not in st.session_state:
         simpan_hasil(st.session_state.nama, st.session_state.kelas, st.session_state.sekolah, skor_num, skor_lit, skor_pen, total_poin, durasi)
         st.session_state.sudah_disimpan = True
+        
+        # --- FITUR KIRIM OTOMATIS KE GOOGLE DRIVE (GOOGLE SHEETS) ---
+        # Ganti teks di bawah dengan URL dari Google Apps Script milikmu
+        url_gdrive = "MASUKKAN_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DI_SINI"
+        
+        if url_gdrive != "MASUKKAN_URL_WEB_APP_GOOGLE_APPS_SCRIPT_DI_SINI":
+            data_payload = {
+                "nama": st.session_state.nama.upper(),
+                "kelas": st.session_state.kelas,
+                "sekolah": st.session_state.sekolah,
+                "skor": total_poin,
+                "waktu": f"{menit}m {detik}s",
+                "numerik": f"{pct_md}%",
+                "literasi": f"{pct_ms}%",
+                "penalaran": f"{pct_pp}%"
+            }
+            try:
+                requests.post(url_gdrive, json=data_payload, timeout=5)
+            except Exception as e:
+                pass # Jika internet gagal/terputus, biarkan saja agar tidak mengganggu aplikasi
 
     st.write("")
-    col_btn1, col_btn2 = st.columns(2)
+    
+    # Siapkan teks laporan untuk fitur Download
+    laporan_teks = f"=== PERFORMA SISWA ===\nNama : {st.session_state.nama.upper()}\nKelas : {st.session_state.kelas}\nSekolah : {st.session_state.sekolah}\nWaktu : {menit} menit {detik} detik\nTotal Poin : {total_poin}\n\n=== PENGUASAAN MATERI ===\n- Numerik : {pct_md}%\n- Literasi : {pct_ms}%\n- Penalaran : {pct_pp}%"
+    
+    col_btn1, col_btn2, col_btn3 = st.columns(3)
     with col_btn1:
+        st.download_button("Download Laporan", data=laporan_teks, file_name=f"Evaluasi_{st.session_state.nama}.txt", use_container_width=True)
+    with col_btn2:
         if st.button("Lihat RANK", use_container_width=True, type="primary"):
             st.session_state.page = 'rank'
             st.rerun()
-    with col_btn2:
+    with col_btn3:
         if st.button("Beranda", use_container_width=True):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
