@@ -137,9 +137,6 @@ def halaman_kuis():
     level_aktif = st.session_state.level_saat_ini
     
     # Header Kuis
-    col1, col2 = st.columns(2)
-    col1.markdown(f"**Kategori:** {kategori_aktif}")
-    col2.markdown(f"**Level:** {level_aktif} dari 5 | **Nyawa:** {'❤️' * st.session_state.nyawa}")
     st.progress(level_aktif / 5)
     st.divider()
 
@@ -220,9 +217,9 @@ def halaman_hasil():
     skor_pen = skor_pp * 8
     total_poin = skor_num + skor_lit + skor_pen
     
-    st.markdown("<h1 style='text-align: center;'>✨ Performa Anda ✨</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; font-size: 26px;'>✨ Performa Anda ✨</h3>", unsafe_allow_html=True)
     st.markdown(f"""
-    <div style='text-align: center; font-size:18px; margin-bottom: 20px;'>
+    <div style='text-align: left; font-size:16px; margin-bottom: 20px; background-color: rgba(255,255,255,0.7); padding: 15px; border-radius: 10px;'>
         Nama : <b>{st.session_state.nama.upper()}</b><br>
         Kelas : <b>{st.session_state.kelas}</b><br>
         Asal Sekolah : <b>{st.session_state.sekolah}</b><br>
@@ -261,13 +258,15 @@ def halaman_hasil():
 
 # --- HALAMAN 4: RANKING ---
 def halaman_rank():
-    st.title("Peringkat Siswa")
-    st.write("Peringkat Siswa Berdasarkan Poin dan Waktu Tercepat")
+    kelas_filter = st.session_state.get('kelas', 'Kelas 3')
+    st.title(f"Peringkat Siswa - {kelas_filter}")
+    st.write(f"Peringkat Siswa {kelas_filter} Berdasarkan Poin dan Waktu Tercepat")
     
     db_path = 'bank_soal.db'
     try:
         conn = sqlite3.connect(db_path)
-        df = pd.read_sql_query("SELECT nama AS Nama, kelas AS Kelas, sekolah AS 'Asal Sekolah', total_skor AS 'Total Poin', durasi AS 'Waktu Tercepat' FROM hasil_ujian ORDER BY total_skor DESC, durasi ASC", conn)
+        query = "SELECT nama AS Nama, kelas AS Kelas, sekolah AS 'Asal Sekolah', total_skor AS 'Total Poin', durasi AS 'Waktu Tercepat' FROM hasil_ujian WHERE kelas = ? ORDER BY total_skor DESC, durasi ASC"
+        df = pd.read_sql_query(query, conn, params=(kelas_filter,))
         conn.close()
         
         # Format durasi seperti Tkinter
